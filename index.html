@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>플레이리스트 에디터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #8B5CF6;
+    --accent-light: #A78BFA;
+    --accent-dark: #6D28D9;
+    --bg: #0A0A0F;
+    --bg2: #111118;
+    --bg3: #1A1A24;
+    --bg4: #22222F;
+    --surface: #1E1E2A;
+    --surface2: #252535;
+    --text: #F0F0F8;
+    --text2: #A0A0B8;
+    --text3: #606078;
+    --border: rgba(139,92,246,0.15);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Pretendard', -apple-system, sans-serif; overflow-x: hidden; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 56px;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+  }
+  nav .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent-light); }
+  nav .nav-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 10px; padding: 3px; }
+  nav .nav-tab {
+    padding: 6px 14px; font-size: 13px; font-weight: 600;
+    border-radius: 8px; border: none; cursor: pointer;
+    color: var(--text2); background: transparent; transition: all 0.2s;
+    font-family: 'Pretendard', sans-serif;
+  }
+  nav .nav-tab.active { background: var(--accent); color: #fff; }
+  nav .nav-actions { display: flex; gap: 8px; }
+  .nav-btn {
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'Pretendard', sans-serif; transition: all 0.2s;
+  }
+  .nav-btn-primary { background: var(--accent); color: #fff; }
+  .nav-btn-primary:active { transform: scale(0.96); background: var(--accent-dark); }
+  .nav-btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .nav-btn-ghost:active { transform: scale(0.96); }
+
+  /* MAIN LAYOUT */
+  main { padding-top: 56px; min-height: 100vh; }
+
+  /* ===== PLAYER PAGE ===== */
+  #page-player { display: block; }
+  #page-editor { display: none; }
+
+  /* PLAYER HERO */
+  .player-hero {
+    position: relative; overflow: hidden;
+    height: 380px;
+    background: var(--bg2);
+  }
+  .hero-cover {
+    width: 100%; height: 100%; object-fit: cover;
+    filter: brightness(0.5) saturate(1.2);
+    transition: all 0.5s ease;
+  }
+  .hero-cover.default-cover {
+    background: linear-gradient(135deg, var(--accent-dark) 0%, #1a0533 50%, #0a0a0f 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(10,10,15,0.2) 0%, rgba(10,10,15,0.5) 40%, rgba(10,10,15,0.95) 100%);
+  }
+  .hero-content {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 16px 20px 20px;
+  }
+  .lyrics-overlay {
+    margin-bottom: 14px;
+    max-height: 80px; overflow: hidden;
+  }
+  .lyrics-overlay p {
+    font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.85);
+    font-weight: 400; text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .track-info { margin-bottom: 14px; }
+  .track-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; }
+  .track-artist { font-size: 14px; color: var(--text2); margin-top: 3px; font-weight: 500; }
+  .player-controls {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ctrl-left { display: flex; align-items: center; gap: 16px; }
+  .play-btn {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--accent);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .play-btn:active { transform: scale(0.92); }
+  .play-btn svg { fill: #fff; width: 22px; height: 22px; }
+  .ctrl-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .ctrl-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+  .ctrl-btn svg { fill: rgba(255,255,255,0.7); width: 18px; height: 18px; }
+  .yt-link-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 20px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600;
+    text-decoration: none; border: 1px solid rgba(255,255,255,0.15);
+    transition: all 0.2s;
+  }
+  .yt-link-badge:active { background: rgba(255,255,255,0.2); }
+
+  /* PLAYLIST SECTION */
+  .playlist-section { padding: 16px 0 100px; }
+  .playlist-header {
+    padding: 0 20px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .playlist-name { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+  .track-count { font-size: 13px; color: var(--text3); font-weight: 500; }
+
+  .track-list { padding: 0 12px; display: flex; flex-direction: column; gap: 2px; }
+  .track-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 8px; border-radius: var(--radius-sm);
+    cursor: pointer; transition: background 0.15s; position: relative;
+  }
+  .track-item:active { background: var(--surface); }
+  .track-item.active { background: var(--surface); }
+  .track-thumb {
+    width: 48px; height: 48px; border-radius: 8px;
+    object-fit: cover; background: var(--bg4); flex-shrink: 0;
+    overflow: hidden; position: relative;
+  }
+  .track-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .track-thumb-default {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, var(--accent-dark), #1a0533);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .track-thumb-default svg { fill: rgba(255,255,255,0.3); width: 20px; height: 20px; }
+  .track-playing-indicator {
+    position: absolute; inset: 0;
+    background: rgba(139,92,246,0.3);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+  }
+  .bars { display: flex; gap: 2px; align-items: flex-end; height: 16px; }
+  .bar {
+    width: 3px; background: var(--accent-light); border-radius: 2px;
+    animation: eq 0.8s ease-in-out infinite alternate;
+  }
+  .bar:nth-child(1) { animation-delay: 0s; }
+  .bar:nth-child(2) { animation-delay: 0.2s; }
+  .bar:nth-child(3) { animation-delay: 0.1s; }
+  @keyframes eq {
+    0% { height: 4px; }
+    100% { height: 14px; }
+  }
+  .track-meta { flex: 1; min-width: 0; }
+  .track-meta-title { font-size: 14px; font-weight: 600; truncate; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-meta-artist { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .track-item.active .track-meta-title { color: var(--accent-light); }
+  .track-num { font-size: 13px; color: var(--text3); font-weight: 500; min-width: 20px; text-align: center; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    padding: 60px 20px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .empty-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; }
+  .empty-icon svg { fill: var(--text3); width: 28px; height: 28px; }
+  .empty-title { font-size: 17px; font-weight: 700; color: var(--text2); }
+  .empty-desc { font-size: 14px; color: var(--text3); line-height: 1.5; }
+  .btn-add-first {
+    margin-top: 8px; padding: 12px 24px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 24px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: 'Pretendard', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-add-first:active { transform: scale(0.96); }
+
+  /* FAB */
+  .fab-area {
+    position: fixed; bottom: 20px; right: 16px;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+    z-index: 50;
+  }
+  .fab-mini-group { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+  .fab {
+    width: 52px; height: 52px; border-radius: 50%;
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4); transition: all 0.2s;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .fab-primary { background: var(--accent); width: 58px; height: 58px; box-shadow: 0 4px 24px rgba(139,92,246,0.5); }
+  .fab-primary:active { transform: scale(0.92); }
+  .fab-secondary { background: var(--surface2); }
+  .fab-secondary:active { transform: scale(0.92); }
+  .fab svg { fill: #fff; width: 22px; height: 22px; }
+  .fab-label {
+    position: absolute; right: 64px;
+    background: var(--surface2); color: var(--text); font-size: 12px; font-weight: 600;
+    padding: 5px 10px; border-radius: 6px; white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    pointer-events: none;
+  }
+
+  /* ===== EDITOR PAGE ===== */
+  .editor-page { padding: 16px 16px 120px; }
+  .editor-section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .editor-section-title {
+    font-size: 12px; font-weight: 700; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 12px;
+  }
+  .form-group { margin-bottom: 12px; }
+  .form-group:last-child { margin-bottom: 0; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; display: block; }
+  .form-input, .form-textarea {
+    width: 100%; background: var(--bg3); border: 1.5px solid var(--border);
+    color: var(--text); font-family: 'Pretendard', sans-serif;
+    font-size: 15px; border-radius: var(--radius-sm);
+    padding: 10px 12px; outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
+
+  /* Track list editor */
+  .track-editor-item {
+    background: var(--bg3); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px;
+    margin-bottom: 8px; position: relative;
+  }
+  .track-editor-item.dragging { opacity: 0.5; border-color: var(--accent); }
+  .track-editor-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .drag-handle {
+    color: var(--text3); cursor: grab; padding: 4px; display: flex;
+    flex-shrink: 0;
+  }
+  .drag-handle svg { fill: var(--text3); width: 18px; height: 18px; }
+  .track-editor-num {
+    font-size: 14px; font-weight: 800; color: var(--accent-light);
+    min-width: 24px;
+  }
+  .track-editor-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); truncate; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track-editor-toggle {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--bg4);
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .track-editor-toggle svg { fill: var(--text3); width: 14px; height: 14px; transition: transform 0.2s; }
+  .track-editor-toggle.open svg { transform: rotate(180deg); }
+  .btn-delete-track {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(239,68,68,0.1); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+  }
+  .btn-delete-track:active { background: rgba(239,68,68,0.3); }
+  .btn-delete-track svg { fill: #ef4444; width: 14px; height: 14px; }
+  .track-editor-fields { display: none; }
+  .track-editor-fields.open { display: block; }
+
+  /* Cover image upload */
+  .cover-upload {
+    width: 100%; aspect-ratio: 1;
+    border-radius: var(--radius-sm); background: var(--bg3);
+    border: 2px dashed var(--border); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; transition: all 0.2s; overflow: hidden; position: relative;
+    max-height: 160px;
+  }
+  .cover-upload:hover { border-color: var(--accent); }
+  .cover-upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cover-upload-label { font-size: 13px; color: var(--text3); font-weight: 500; z-index: 1; }
+  .cover-upload svg { fill: var(--text3); width: 28px; height: 28px; z-index: 1; }
+  .cover-upload-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; z-index: 2; opacity: 0; transition: opacity 0.2s;
+  }
+  .cover-upload:hover .cover-upload-overlay { opacity: 1; }
+  .cover-upload-overlay span { font-size: 12px; color: #fff; font-weight: 600; }
+  .cover-upload-overlay svg { fill: #fff; width: 22px; height: 22px; }
+  .cover-row { display: flex; gap: 12px; align-items: flex-start; }
+  .cover-row .cover-upload { flex: 0 0 110px; max-height: 110px; width: 110px; }
+  .cover-row .cover-url-area { flex: 1; }
+
+  /* Cover mode tabs */
+  .cover-mode-tabs {
+    display: flex; gap: 3px; background: var(--bg4);
+    border-radius: 8px; padding: 3px; margin-bottom: 8px;
+  }
+  .cover-mode-tab {
+    flex: 1; padding: 5px 8px; font-size: 11px; font-weight: 700;
+    border-radius: 6px; border: none; cursor: pointer;
+    color: var(--text3); background: transparent; transition: all 0.2s;
+    font-family: 'Pretendard', sans-serif; text-align: center;
+  }
+  .cover-mode-tab.active { background: var(--surface2); color: var(--text); }
+  .cover-url-input-wrap { position: relative; }
+  .cover-url-input-wrap .url-status {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; font-weight: 700; pointer-events: none;
+  }
+  .url-status.ok { color: #10B981; }
+  .url-status.err { color: #EF4444; }
+  .cover-url-preview {
+    width: 100%; aspect-ratio: 16/9; border-radius: 8px;
+    background: var(--bg4); margin-top: 6px; overflow: hidden;
+    display: none; border: 1px solid var(--border);
+  }
+  .cover-url-preview.show { display: block; }
+  .cover-url-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Color picker */
+  .color-preview { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; }
+  .color-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .color-hex-input {
+    flex: 1; background: var(--bg3); border: 1.5px solid var(--border);
+    color: var(--text); font-family: 'Pretendard', sans-serif;
+    font-size: 14px; border-radius: var(--radius-sm); padding: 8px 12px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .color-hex-input:focus { border-color: var(--accent); }
+  input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 6px;
+    border-radius: 3px; outline: none; cursor: pointer;
+  }
+  .hue-slider { background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); }
+  .sat-slider { background: linear-gradient(to right, #808080, var(--accent)); }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+  .color-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .preset-dot {
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: all 0.15s;
+  }
+  .preset-dot.selected { border-color: #fff; transform: scale(1.1); }
+
+  /* Add track btn */
+  .btn-add-track {
+    width: 100%; padding: 12px; background: transparent;
+    border: 2px dashed var(--border); border-radius: var(--radius-sm);
+    color: var(--accent-light); font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: 'Pretendard', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 0.2s;
+  }
+  .btn-add-track:active { border-color: var(--accent); background: rgba(139,92,246,0.05); }
+
+  /* SHARE ACTION SHEET */
+  .sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: all; }
+  .action-sheet {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 201;
+    background: var(--bg2); border-radius: 24px 24px 0 0;
+    padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px);
+    transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    border-top: 1px solid var(--border);
+  }
+  .action-sheet.open { transform: translateY(0); }
+  .sheet-handle { width: 40px; height: 4px; background: var(--bg4); border-radius: 2px; margin: 0 auto 20px; }
+  .sheet-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; }
+  .sheet-actions { display: flex; flex-direction: column; gap: 8px; }
+  .sheet-action {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: var(--radius-sm);
+    background: var(--surface); border: none; cursor: pointer;
+    color: var(--text); font-size: 15px; font-weight: 600;
+    font-family: 'Pretendard', sans-serif; transition: all 0.15s;
+    text-align: left;
+  }
+  .sheet-action:active { background: var(--surface2); }
+  .sheet-action svg { fill: var(--accent-light); width: 20px; height: 20px; flex-shrink: 0; }
+  .sheet-action-desc { font-size: 12px; color: var(--text3); font-weight: 400; margin-top: 2px; }
+  .sheet-cancel {
+    margin-top: 8px; padding: 14px; border-radius: var(--radius-sm);
+    background: var(--bg3); border: none; cursor: pointer;
+    color: var(--text2); font-size: 15px; font-weight: 600;
+    font-family: 'Pretendard', sans-serif; width: 100%; transition: all 0.15s;
+  }
+  .sheet-cancel:active { background: var(--bg4); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 600;
+    padding: 10px 20px; border-radius: 24px; z-index: 300;
+    opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: 1px solid var(--border);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* LINK BOX */
+  .link-box {
+    background: var(--bg3); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px;
+    display: flex; align-items: center; gap: 8px; margin-top: 12px;
+  }
+  .link-box-url { flex: 1; font-size: 12px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .link-box-copy {
+    padding: 6px 12px; background: var(--accent); color: #fff;
+    border: none; border-radius: 6px; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: 'Pretendard', sans-serif; flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .link-box-copy:active { background: var(--accent-dark); transform: scale(0.96); }
+
+  /* SCROLL BEHAVIOR */
+  .scroll-area { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  /* image capture area */
+  #capture-area { }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .loading-overlay.show { opacity: 1; pointer-events: all; }
+  .loading-spinner {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid var(--bg3); border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text2); font-weight: 500; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+/* CROP EDITOR */
+.crop-modal {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(0,0,0,0.92);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.crop-modal.open { opacity: 1; pointer-events: all; }
+.crop-modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+.crop-container {
+  position: relative;
+  width: 100%; max-width: 360px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 2px solid var(--accent);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.crop-container:active { cursor: grabbing; }
+.crop-img {
+  position: absolute;
+  transform-origin: 0 0;
+}
+.crop-overlay {
+  position: absolute; inset: 0;
+  border: 3px solid var(--accent);
+  border-radius: 10px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+}
+.crop-hint { font-size: 12px; color: var(--text3); margin-top: 10px; text-align: center; }
+.crop-zoom-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; width: 100%; max-width: 360px; }
+.crop-zoom-label { font-size: 12px; color: var(--text2); font-weight: 600; white-space: nowrap; }
+.crop-buttons { display: flex; gap: 10px; margin-top: 16px; width: 100%; max-width: 360px; }
+.crop-btn {
+  flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700;
+  border: none; cursor: pointer; font-family: 'Pretendard', sans-serif; transition: all 0.2s;
+}
+.crop-btn-cancel { background: var(--bg3); color: var(--text2); }
+.crop-btn-apply { background: var(--accent); color: #fff; }
+.crop-btn-apply:active { background: var(--accent-dark); }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">🎵 PLEditor</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-player" onclick="switchPage('player')">플레이어</button>
+    <button class="nav-tab" id="tab-editor" onclick="switchPage('editor')">에디터</button>
+  </div>
+  <button class="nav-btn nav-btn-primary" onclick="openShareSheet()">공유</button>
+</nav>
+
+<main>
+  <!-- PLAYER PAGE -->
+  <div id="page-player">
+    <div id="capture-area">
+      <!-- HERO PLAYER -->
+      <div class="player-hero" id="player-hero">
+        <div class="hero-cover default-cover" id="hero-cover-wrap">
+          <svg viewBox="0 0 24 24" style="fill:rgba(255,255,255,0.15);width:60px;height:60px;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        </div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="lyrics-overlay" id="lyrics-overlay">
+            <p id="lyrics-text"></p>
+          </div>
+          <div class="track-info">
+            <div class="track-title" id="now-title">플레이리스트를 편집하세요</div>
+            <div class="track-artist" id="now-artist">에디터 탭에서 곡을 추가해주세요</div>
+          </div>
+          <div class="player-controls">
+            <div class="ctrl-left">
+              <button class="ctrl-btn" onclick="prevTrack()">
+                <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+              </button>
+              <button class="play-btn" id="play-btn" onclick="handlePlay()">
+                <svg viewBox="0 0 24 24" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+              <button class="ctrl-btn" onclick="nextTrack()">
+                <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14 5.5 3.89L8 13.86V9.86zM16 6h2v12h-2z"/></svg>
+              </button>
+            </div>
+            <a class="yt-link-badge" id="yt-badge" href="#" target="_blank" style="display:none;">
+              <svg viewBox="0 0 24 24" style="fill:currentColor;width:14px;height:14px;"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-2.47 12.6 12.6 0 0 0-7.35 2.15 3.82 3.82 0 0 1 2.43 2.3C7.61 10.14 6 12.15 6 14.49c0 2.7 2.19 4.88 4.88 4.88 1.6 0 3.02-.77 3.93-1.97L20 20l-1.41-1.41L20 20v-8.06c0-2.44-1.8-4.47-4.1-4.85zM12 17.37c-1.59 0-2.88-1.29-2.88-2.88S10.41 11.61 12 11.61c1.59 0 2.88 1.29 2.88 2.88S13.59 17.37 12 17.37z"/></svg>
+              YouTube
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYLIST -->
+      <div class="playlist-section">
+        <div class="playlist-header">
+          <div class="playlist-name" id="playlist-name-display">내 플레이리스트</div>
+          <div class="track-count" id="track-count-display">0곡</div>
+        </div>
+        <div class="track-list" id="track-list-display">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+            </div>
+            <div class="empty-title">아직 곡이 없어요</div>
+            <div class="empty-desc">에디터에서 음악을 추가하고<br>나만의 플레이리스트를 만들어보세요</div>
+            <button class="btn-add-first" onclick="switchPage('editor')">에디터로 이동</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITOR PAGE -->
+  <div id="page-editor">
+    <div class="editor-page">
+
+      <!-- Playlist Info -->
+      <div class="editor-section">
+        <div class="editor-section-title">플레이리스트 정보</div>
+        <div class="form-group">
+          <label class="form-label">플레이리스트 이름</label>
+          <input type="text" class="form-input" id="edit-playlist-name" placeholder="플레이리스트 이름을 입력하세요" value="내 플레이리스트" oninput="saveData()">
+        </div>
+      </div>
+
+      <!-- Point Color -->
+      <div class="editor-section">
+        <div class="editor-section-title">포인트 컬러</div>
+        <div class="color-row">
+          <div class="color-preview" id="color-preview-box"></div>
+          <input type="text" class="color-hex-input" id="color-hex" placeholder="#8B5CF6" value="#8B5CF6" oninput="onHexInput(this.value)">
+          <input type="color" id="color-native" value="#8B5CF6" style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:0;background:none;" oninput="onNativeColor(this.value)">
+        </div>
+        <div style="margin-bottom:8px;">
+          <label class="form-label" style="margin-bottom:6px;font-size:12px;">색조 (Hue)</label>
+          <input type="range" class="hue-slider" id="hue-slider" min="0" max="360" value="262" oninput="onHueChange(this.value)">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label class="form-label" style="margin-bottom:6px;font-size:12px;">채도 (Saturation)</label>
+          <input type="range" id="sat-slider" min="30" max="100" value="82" style="background:linear-gradient(to right,#808080,var(--accent));" oninput="onSatChange(this.value)">
+        </div>
+        <div class="color-presets" id="color-presets">
+          <div class="preset-dot selected" style="background:#8B5CF6;" data-color="#8B5CF6" onclick="applyPreset(this)"></div>
+          <div class="preset-dot" style="background:#EC4899;" data-color="#EC4899" onclick="applyPreset(this)"></div>
+          <div class="preset-dot" style="background:#3B82F6;" data-color="#3B82F6" onclick="applyPreset(this)"></div>
+          <div class="preset-dot" style="background:#10B981;" data-color="#10B981" onclick="applyPreset(this)"></div>
+          <div class="preset-dot" style="background:#F59E0B;" data-color="#F59E0B" onclick="applyPreset(this)"></div>
+          <div class="preset-dot" style="background:#EF4444;" data-color="#EF4444" onclick="applyPreset(this)"></div>
+          <div class="preset-dot" style="background:#06B6D4;" data-color="#06B6D4" onclick="applyPreset(this)"></div>
+          <div class="preset-dot" style="background:#F97316;" data-color="#F97316" onclick="applyPreset(this)"></div>
+        </div>
+      </div>
+
+      <!-- Track List Editor -->
+      <div class="editor-section">
+        <div class="editor-section-title" style="display:flex;justify-content:space-between;">
+          <span>트랙 목록</span>
+          <span id="editor-track-count" style="font-weight:500;color:var(--text3);">0곡</span>
+        </div>
+        <div id="track-editor-list"></div>
+        <button class="btn-add-track" onclick="addNewTrack()">
+          <svg viewBox="0 0 24 24" style="fill:currentColor;width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          트랙 추가
+        </button>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- FABs -->
+<div class="fab-area" id="fab-area">
+  <div class="fab fab-primary" onclick="openShareSheet()">
+    <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+  </div>
+</div>
+
+<!-- SHARE SHEET -->
+<div class="sheet-backdrop" id="share-backdrop" onclick="closeShareSheet()"></div>
+<div class="action-sheet" id="share-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">공유하기</div>
+  <div class="sheet-actions">
+    <button class="sheet-action" onclick="shareLink()">
+      <svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+      <div>
+        <div>공유 링크 복사</div>
+        <div class="sheet-action-desc">커버 URL 이미지 포함 · base64 제외</div>
+      </div>
+    </button>
+    <button class="sheet-action" onclick="saveAsImage()">
+      <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      <div>
+        <div>이미지로 저장</div>
+        <div class="sheet-action-desc">현재 화면을 PNG로 저장합니다</div>
+      </div>
+    </button>
+    <button class="sheet-action" onclick="exportData()">
+      <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      <div>
+        <div>데이터 내보내기</div>
+        <div class="sheet-action-desc">JSON 데이터를 다운로드합니다</div>
+      </div>
+    </button>
+  </div>
+  <div id="share-link-box" style="display:none;">
+    <div class="link-box">
+      <div class="link-box-url" id="share-link-url">링크 생성 중...</div>
+      <button class="link-box-copy" onclick="copyShareLink()">복사</button>
+    </div>
+  </div>
+  <button class="sheet-cancel" onclick="closeShareSheet()">취소</button>
+</div>
+
+
+<!-- CROP MODAL -->
+<div class="crop-modal" id="crop-modal">
+  <div class="crop-modal-title">커버 위치 조정</div>
+  <div class="crop-container" id="crop-container">
+    <img class="crop-img" id="crop-img" src="" alt="">
+    <div class="crop-overlay"></div>
+  </div>
+  <div class="crop-hint">드래그로 위치 · 핀치 또는 슬라이더로 크기 조절</div>
+  <div class="crop-zoom-row">
+    <span class="crop-zoom-label">확대</span>
+    <input type="range" id="crop-zoom-slider" min="100" max="300" value="100" oninput="cropSetZoom(this.value)">
+  </div>
+  <div class="crop-buttons">
+    <button class="crop-btn crop-btn-cancel" onclick="closeCropModal()">취소</button>
+    <button class="crop-btn crop-btn-apply" onclick="applyCrop()">적용</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">처리 중...</div>
+</div>
+
+<!-- html2canvas CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+// ========== STATE ==========
+let playlist = {
+  name: '내 플레이리스트',
+  accentColor: '#8B5CF6',
+  tracks: []
+};
+let currentTrackIndex = 0;
+let isPlaying = false;
+let dragSrc = null;
+let shareGenerated = false;
+let generatedShareLink = '';
+
+// ========== CROP EDITOR ==========
+let cropState = { id: null, imgSrc: '', x: 0, y: 0, zoom: 1, isDragging: false, lastX: 0, lastY: 0, lastDist: 0 };
+
+function openCropModal(id, src) {
+  cropState.id = id;
+  cropState.imgSrc = src;
+  cropState.zoom = 1;
+  cropState.x = 0;
+  cropState.y = 0;
+
+  const modal = document.getElementById('crop-modal');
+  const img = document.getElementById('crop-img');
+  const slider = document.getElementById('crop-zoom-slider');
+  slider.value = 100;
+  img.src = src;
+
+  img.onload = () => {
+    cropFitImage();
+    applyCropTransform();
+  };
+
+  modal.classList.add('open');
+
+  // Touch events
+  const container = document.getElementById('crop-container');
+  container.addEventListener('mousedown', cropMouseDown);
+  container.addEventListener('mousemove', cropMouseMove);
+  container.addEventListener('mouseup', cropMouseUp);
+  container.addEventListener('mouseleave', cropMouseUp);
+  container.addEventListener('touchstart', cropTouchStart, { passive: false });
+  container.addEventListener('touchmove', cropTouchMove, { passive: false });
+  container.addEventListener('touchend', cropTouchEnd);
+}
+
+function closeCropModal() {
+  document.getElementById('crop-modal').classList.remove('open');
+  const container = document.getElementById('crop-container');
+  container.removeEventListener('mousedown', cropMouseDown);
+  container.removeEventListener('mousemove', cropMouseMove);
+  container.removeEventListener('mouseup', cropMouseUp);
+  container.removeEventListener('mouseleave', cropMouseUp);
+  container.removeEventListener('touchstart', cropTouchStart);
+  container.removeEventListener('touchmove', cropTouchMove);
+  container.removeEventListener('touchend', cropTouchEnd);
+}
+
+function cropFitImage() {
+  const img = document.getElementById('crop-img');
+  const container = document.getElementById('crop-container');
+  const cw = container.offsetWidth, ch = container.offsetHeight;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  // fit: shorter side fills container
+  const scale = Math.max(cw / iw, ch / ih);
+  cropState.baseScale = scale;
+  cropState.zoom = 1;
+  // center
+  cropState.x = (cw - iw * scale) / 2;
+  cropState.y = (ch - ih * scale) / 2;
+}
+
+function applyCropTransform() {
+  const img = document.getElementById('crop-img');
+  const s = cropState.baseScale * cropState.zoom;
+  img.style.transform = `translate(${cropState.x}px, ${cropState.y}px) scale(${s})`;
+  img.style.transformOrigin = '0 0';
+  img.style.width = document.getElementById('crop-img').naturalWidth + 'px';
+  img.style.height = document.getElementById('crop-img').naturalHeight + 'px';
+}
+
+function cropSetZoom(val) {
+  const container = document.getElementById('crop-container');
+  const img = document.getElementById('crop-img');
+  const newZoom = val / 100;
+  const cw = container.offsetWidth, ch = container.offsetHeight;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  // Zoom toward center
+  const oldS = cropState.baseScale * cropState.zoom;
+  const newS = cropState.baseScale * newZoom;
+  const cx = cw / 2, cy = ch / 2;
+  cropState.x = cx - (cx - cropState.x) * (newS / oldS);
+  cropState.y = cy - (cy - cropState.y) * (newS / oldS);
+  cropState.zoom = newZoom;
+  clampCrop();
+  applyCropTransform();
+}
+
+function clampCrop() {
+  const container = document.getElementById('crop-container');
+  const img = document.getElementById('crop-img');
+  const cw = container.offsetWidth, ch = container.offsetHeight;
+  const s = cropState.baseScale * cropState.zoom;
+  const iw = img.naturalWidth * s, ih = img.naturalHeight * s;
+  // Don't let image leave container edges
+  if (cropState.x > 0) cropState.x = 0;
+  if (cropState.y > 0) cropState.y = 0;
+  if (cropState.x < cw - iw) cropState.x = cw - iw;
+  if (cropState.y < ch - ih) cropState.y = ch - ih;
+}
+
+// Mouse drag
+function cropMouseDown(e) { cropState.isDragging = true; cropState.lastX = e.clientX; cropState.lastY = e.clientY; }
+function cropMouseMove(e) {
+  if (!cropState.isDragging) return;
+  cropState.x += e.clientX - cropState.lastX;
+  cropState.y += e.clientY - cropState.lastY;
+  cropState.lastX = e.clientX; cropState.lastY = e.clientY;
+  clampCrop(); applyCropTransform();
+}
+function cropMouseUp() { cropState.isDragging = false; }
+
+// Touch drag + pinch
+function cropTouchStart(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    cropState.isDragging = true;
+    cropState.lastX = e.touches[0].clientX;
+    cropState.lastY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    cropState.isDragging = false;
+    cropState.lastDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+}
+function cropTouchMove(e) {
+  e.preventDefault();
+  if (e.touches.length === 1 && cropState.isDragging) {
+    cropState.x += e.touches[0].clientX - cropState.lastX;
+    cropState.y += e.touches[0].clientY - cropState.lastY;
+    cropState.lastX = e.touches[0].clientX;
+    cropState.lastY = e.touches[0].clientY;
+    clampCrop(); applyCropTransform();
+  } else if (e.touches.length === 2) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const delta = dist / cropState.lastDist;
+    const newZoom = Math.min(3, Math.max(1, cropState.zoom * delta));
+    const slider = document.getElementById('crop-zoom-slider');
+    slider.value = newZoom * 100;
+    cropSetZoom(newZoom * 100);
+    cropState.lastDist = dist;
+  }
+}
+function cropTouchEnd() { cropState.isDragging = false; }
+
+function applyCrop() {
+  const container = document.getElementById('crop-container');
+  const img = document.getElementById('crop-img');
+  const cw = container.offsetWidth, ch = container.offsetHeight;
+  const s = cropState.baseScale * cropState.zoom;
+
+  // Render to canvas at 2x resolution
+  const canvas = document.createElement('canvas');
+  canvas.width = cw * 2; canvas.height = ch * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img,
+    -cropState.x / s, -cropState.y / s,
+    cw / s, ch / s,
+    0, 0, canvas.width, canvas.height
+  );
+
+  const base64 = canvas.toDataURL('image/jpeg', 0.9);
+  updateTrack(cropState.id, 'coverImage', base64);
+  updateTrack(cropState.id, 'coverImageUrl', ''); // URL 모드 초기화
+  closeCropModal();
+  renderEditorPage();
+  renderPlayerPage();
+  showToast('커버 이미지가 적용됐습니다');
+}
+
+// ========== INIT ==========
+function init() {
+  loadFromStorage();
+  renderPlayerPage();
+  renderEditorPage();
+  applyAccentColor(playlist.accentColor);
+}
+
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem('playlist_editor_data');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      playlist = { ...playlist, ...parsed };
+      if (!playlist.tracks) playlist.tracks = [];
+    }
+  } catch(e) {}
+}
+
+function saveData() {
+  playlist.name = document.getElementById('edit-playlist-name').value || '내 플레이리스트';
+  try { localStorage.setItem('playlist_editor_data', JSON.stringify(playlist)); } catch(e) {}
+  renderPlayerPage();
+  document.getElementById('playlist-name-display').textContent = playlist.name;
+}
+
+// ========== PAGE SWITCH ==========
+function switchPage(page) {
+  document.getElementById('page-player').style.display = page === 'player' ? 'block' : 'none';
+  document.getElementById('page-editor').style.display = page === 'editor' ? 'block' : 'none';
+  document.getElementById('tab-player').classList.toggle('active', page === 'player');
+  document.getElementById('tab-editor').classList.toggle('active', page === 'editor');
+}
+
+// ========== ACCENT COLOR ==========
+function applyAccentColor(hex) {
+  if (!hex || !hex.startsWith('#')) return;
+  const r = document.documentElement;
+  r.style.setProperty('--accent', hex);
+  const lighter = lightenHex(hex, 20);
+  const darker = darkenHex(hex, 15);
+  r.style.setProperty('--accent-light', lighter);
+  r.style.setProperty('--accent-dark', darker);
+  document.getElementById('color-preview-box').style.background = hex;
+  document.getElementById('color-native').value = hex;
+  // update sat slider bg
+  const sl = document.getElementById('sat-slider');
+  if (sl) sl.style.background = `linear-gradient(to right, #808080, ${hex})`;
+}
+
+function lightenHex(hex, amount) {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(Math.min(255,r+amount*1.5), Math.min(255,g+amount*1.5), Math.min(255,b+amount*1.5));
+}
+function darkenHex(hex, amount) {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(Math.max(0,r-amount), Math.max(0,g-amount), Math.max(0,b-amount));
+}
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+function rgbToHex(r,g,b) {
+  return '#' + [r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+}
+
+function onHexInput(val) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+    playlist.accentColor = val;
+    applyAccentColor(val);
+    saveData();
+    updatePresetSelection(val);
+  }
+}
+function onNativeColor(val) {
+  playlist.accentColor = val;
+  document.getElementById('color-hex').value = val;
+  applyAccentColor(val);
+  saveData();
+  updatePresetSelection(val);
+  // update hue slider
+  const [h] = hexToHsl(val);
+  document.getElementById('hue-slider').value = h;
+}
+function onHueChange(hue) {
+  const current = playlist.accentColor;
+  const [,s,l] = hexToHsl(current);
+  const newHex = hslToHex(hue, s, l);
+  playlist.accentColor = newHex;
+  document.getElementById('color-hex').value = newHex;
+  applyAccentColor(newHex);
+  saveData();
+  updatePresetSelection(newHex);
+}
+function onSatChange(sat) {
+  const current = playlist.accentColor;
+  const [h,,l] = hexToHsl(current);
+  const newHex = hslToHex(h, sat, l);
+  playlist.accentColor = newHex;
+  document.getElementById('color-hex').value = newHex;
+  applyAccentColor(newHex);
+  saveData();
+}
+function hexToHsl(hex) {
+  let [r,g,b] = hexToRgb(hex); r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}else{
+    const d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break;}
+  }
+  return [Math.round(h*360),Math.round(s*100),Math.round(l*100)];
+}
+function hslToHex(h,s,l) {
+  s/=100;l/=100;
+  const a=s*Math.min(l,1-l);
+  const f=n=>{const k=(n+h/30)%12;const col=l-a*Math.max(Math.min(k-3,9-k,1),-1);return Math.round(255*col).toString(16).padStart(2,'0');};
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+function applyPreset(el) {
+  const color = el.dataset.color;
+  playlist.accentColor = color;
+  document.getElementById('color-hex').value = color;
+  document.getElementById('color-native').value = color;
+  applyAccentColor(color);
+  saveData();
+  updatePresetSelection(color);
+  const [h,s] = hexToHsl(color);
+  document.getElementById('hue-slider').value = h;
+  document.getElementById('sat-slider').value = s;
+}
+function updatePresetSelection(hex) {
+  document.querySelectorAll('.preset-dot').forEach(d => {
+    d.classList.toggle('selected', d.dataset.color.toLowerCase() === hex.toLowerCase());
+  });
+}
+
+// ========== TRACK MANAGEMENT ==========
+function addNewTrack() {
+  const track = { id: Date.now(), title:'새 곡', artist:'아티스트', lyrics:'', youtubeUrl:'', coverImage:'', coverImageUrl:'' };
+  playlist.tracks.push(track);
+  saveData();
+  renderEditorPage();
+  // open last item
+  setTimeout(() => {
+    const items = document.querySelectorAll('.track-editor-fields');
+    if (items.length) {
+      const last = items[items.length-1];
+      last.classList.add('open');
+      const toggle = last.previousElementSibling?.querySelector('.track-editor-toggle');
+      if (toggle) toggle.classList.add('open');
+      last.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+  }, 50);
+}
+
+function deleteTrack(id) {
+  const idx = playlist.tracks.findIndex(t=>t.id===id);
+  if (idx > -1) {
+    playlist.tracks.splice(idx, 1);
+    if (currentTrackIndex >= playlist.tracks.length) currentTrackIndex = Math.max(0, playlist.tracks.length-1);
+    saveData();
+    renderEditorPage();
+    renderPlayerPage();
+  }
+}
+
+function updateTrack(id, field, value) {
+  const t = playlist.tracks.find(t=>t.id===id);
+  if (t) { t[field] = value; saveData(); }
+}
+
+function handleCoverUpload(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // 업로드 즉시 크롭 모달 열기
+    openCropModal(id, e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ========== DRAG & DROP SORT ==========
+let draggedId = null;
+function onDragStart(e, id) { draggedId = id; e.currentTarget.classList.add('dragging'); }
+function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); draggedId = null; }
+function onDragOver(e, id) {
+  e.preventDefault();
+  if (!draggedId || draggedId === id) return;
+  const fromIdx = playlist.tracks.findIndex(t=>t.id===draggedId);
+  const toIdx = playlist.tracks.findIndex(t=>t.id===id);
+  if (fromIdx < 0 || toIdx < 0) return;
+  const arr = [...playlist.tracks];
+  const [moved] = arr.splice(fromIdx, 1);
+  arr.splice(toIdx, 0, moved);
+  playlist.tracks = arr;
+  saveData();
+  renderEditorPage();
+}
+
+// Touch-based drag (simplified swap)
+let touchDragId = null, touchStartY = 0;
+function onTouchDragStart(e, id) {
+  touchDragId = id;
+  touchStartY = e.touches[0].clientY;
+}
+
+// ========== RENDER PLAYER PAGE ==========
+function renderPlayerPage() {
+  const t = playlist.tracks[currentTrackIndex];
+  const nameEl = document.getElementById('playlist-name-display');
+  const countEl = document.getElementById('track-count-display');
+  nameEl.textContent = playlist.name;
+  countEl.textContent = `${playlist.tracks.length}곡`;
+
+  // Hero
+  const heroWrap = document.getElementById('hero-cover-wrap');
+  const coverSrc = t && (t.coverImageUrl || t.coverImage);
+  if (coverSrc) {
+    heroWrap.className = 'hero-cover';
+    heroWrap.innerHTML = `<img src="${coverSrc}" style="width:100%;height:100%;object-fit:cover;" alt="cover" crossorigin="anonymous">`;
+  } else {
+    heroWrap.className = 'hero-cover default-cover';
+    heroWrap.innerHTML = `<svg viewBox="0 0 24 24" style="fill:rgba(255,255,255,0.15);width:60px;height:60px;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`;
+  }
+
+  document.getElementById('now-title').textContent = t ? t.title : '플레이리스트를 편집하세요';
+  document.getElementById('now-artist').textContent = t ? t.artist : '에디터 탭에서 곡을 추가해주세요';
+  document.getElementById('lyrics-text').textContent = t ? (t.lyrics || '') : '';
+  document.getElementById('lyrics-overlay').style.display = (t && t.lyrics) ? 'block' : 'none';
+
+  const ytBadge = document.getElementById('yt-badge');
+  if (t && t.youtubeUrl) {
+    ytBadge.style.display = 'flex';
+    ytBadge.href = t.youtubeUrl;
+  } else {
+    ytBadge.style.display = 'none';
+  }
+
+  // Track list
+  const listEl = document.getElementById('track-list-display');
+  if (!playlist.tracks.length) {
+    listEl.innerHTML = `<div class="empty-state">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>
+      <div class="empty-title">아직 곡이 없어요</div>
+      <div class="empty-desc">에디터에서 음악을 추가하고<br>나만의 플레이리스트를 만들어보세요</div>
+      <button class="btn-add-first" onclick="switchPage('editor')">에디터로 이동</button>
+    </div>`;
+    return;
+  }
+  listEl.innerHTML = playlist.tracks.map((t, i) => {
+    const cs = t.coverImageUrl || t.coverImage;
+    return `
+    <div class="track-item ${i===currentTrackIndex?'active':''}" onclick="selectTrack(${i})">
+      <div class="track-thumb">
+        ${cs ? `<img src="${cs}" alt="" crossorigin="anonymous">` : `<div class="track-thumb-default"><svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>`}
+        ${i===currentTrackIndex&&isPlaying ? `<div class="track-playing-indicator"><div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div></div>` : ''}
+      </div>
+      <div class="track-meta">
+        <div class="track-meta-title">${escHtml(t.title)}</div>
+        <div class="track-meta-artist">${escHtml(t.artist)}</div>
+      </div>
+      <div class="track-num">${i+1}</div>
+    </div>
+  `}).join('');
+}
+
+function selectTrack(idx) {
+  currentTrackIndex = idx;
+  isPlaying = false;
+  updatePlayIcon(false);
+  renderPlayerPage();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function prevTrack() {
+  if (!playlist.tracks.length) return;
+  currentTrackIndex = (currentTrackIndex - 1 + playlist.tracks.length) % playlist.tracks.length;
+  isPlaying = false; updatePlayIcon(false);
+  renderPlayerPage();
+}
+
+function nextTrack() {
+  if (!playlist.tracks.length) return;
+  currentTrackIndex = (currentTrackIndex + 1) % playlist.tracks.length;
+  isPlaying = false; updatePlayIcon(false);
+  renderPlayerPage();
+}
+
+function handlePlay() {
+  const t = playlist.tracks[currentTrackIndex];
+  if (!t) { showToast('먼저 곡을 추가해주세요'); return; }
+  if (t.youtubeUrl) {
+    // Try to open youtube url
+    window.open(t.youtubeUrl, '_blank');
+    isPlaying = true; updatePlayIcon(true);
+    renderPlayerPage();
+  } else {
+    showToast('YouTube URL이 없는 곡입니다');
+  }
+}
+
+function updatePlayIcon(playing) {
+  document.getElementById('play-icon').innerHTML = playing
+    ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+}
+
+// ========== RENDER EDITOR PAGE ==========
+function renderEditorPage() {
+  document.getElementById('edit-playlist-name').value = playlist.name;
+  document.getElementById('editor-track-count').textContent = `${playlist.tracks.length}곡`;
+
+  const listEl = document.getElementById('track-editor-list');
+  if (!playlist.tracks.length) {
+    listEl.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:14px;">아직 트랙이 없습니다</div>`;
+    return;
+  }
+
+  listEl.innerHTML = playlist.tracks.map((t, i) => `
+    <div class="track-editor-item" id="tei-${t.id}"
+      draggable="true"
+      ondragstart="onDragStart(event, ${t.id})"
+      ondragend="onDragEnd(event)"
+      ondragover="onDragOver(event, ${t.id})">
+      <div class="track-editor-header">
+        <div class="drag-handle">
+          <svg viewBox="0 0 24 24"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </div>
+        <div class="track-editor-num">${i+1}</div>
+        <div class="track-editor-name">${escHtml(t.title)}</div>
+        <button class="track-editor-toggle" id="toggle-${t.id}" onclick="toggleTrackEditor(${t.id})">
+          <svg viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+        </button>
+        <button class="btn-delete-track" onclick="deleteTrack(${t.id})">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="track-editor-fields" id="fields-${t.id}">
+        <div class="cover-row">
+          <div>
+            <label class="form-label" style="font-size:12px;">앨범 커버</label>
+            <div class="cover-mode-tabs">
+              <button class="cover-mode-tab ${!t.coverImageUrl ? 'active' : ''}" onclick="setCoverMode(${t.id},'upload')">파일</button>
+              <button class="cover-mode-tab ${t.coverImageUrl ? 'active' : ''}" onclick="setCoverMode(${t.id},'url')">URL</button>
+            </div>
+            <div id="cover-upload-area-${t.id}" style="display:${t.coverImageUrl ? 'none' : 'block'}">
+              <label class="cover-upload" for="cover-file-${t.id}" style="max-height:110px;width:110px;">
+                ${(t.coverImage && !t.coverImageUrl) ? `<img src="${t.coverImage}" alt="cover"><div class="cover-upload-overlay"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg><span>변경</span></div>` : `<svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg><span class="cover-upload-label">업로드</span>`}
+              </label>
+              <input type="file" id="cover-file-${t.id}" accept="image/*" style="display:none;" onchange="handleCoverUpload(${t.id}, this)">
+            </div>
+            <div id="cover-url-area-${t.id}" style="display:${t.coverImageUrl ? 'block' : 'none'}">
+              <div class="cover-url-input-wrap">
+                <input type="url" class="form-input" id="cover-url-input-${t.id}"
+                  value="${escAttr(t.coverImageUrl)}"
+                  placeholder="https://..."
+                  style="padding-right:36px;font-size:12px;"
+                  oninput="handleCoverUrlInput(${t.id}, this.value)">
+                <span class="url-status" id="cover-url-status-${t.id}">${t.coverImageUrl ? '✓' : ''}</span>
+              </div>
+              <div class="cover-url-preview ${t.coverImageUrl ? 'show' : ''}" id="cover-url-preview-${t.id}">
+                ${t.coverImageUrl ? `<img src="${escAttr(t.coverImageUrl)}" alt="preview">` : ''}
+              </div>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <div class="form-group">
+              <label class="form-label">곡 이름</label>
+              <input type="text" class="form-input" value="${escAttr(t.title)}" placeholder="곡 이름" oninput="updateTrack(${t.id},'title',this.value);document.getElementById('tei-${t.id}').querySelector('.track-editor-name').textContent=this.value||'새 곡'">
+            </div>
+            <div class="form-group">
+              <label class="form-label">작곡자 / 아티스트</label>
+              <input type="text" class="form-input" value="${escAttr(t.artist)}" placeholder="아티스트명" oninput="updateTrack(${t.id},'artist',this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+          <label class="form-label">가사</label>
+          <textarea class="form-textarea" placeholder="가사를 입력하세요..." oninput="updateTrack(${t.id},'lyrics',this.value)">${escHtml(t.lyrics)}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">YouTube URL</label>
+          <input type="url" class="form-input" value="${escAttr(t.youtubeUrl)}" placeholder="https://youtube.com/watch?v=..." oninput="updateTrack(${t.id},'youtubeUrl',this.value)">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleTrackEditor(id) {
+  const fields = document.getElementById(`fields-${id}`);
+  const toggle = document.getElementById(`toggle-${id}`);
+  fields.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+// ========== COVER MODE (파일 / URL) ==========
+function setCoverMode(id, mode) {
+  const uploadArea = document.getElementById(`cover-upload-area-${id}`);
+  const urlArea = document.getElementById(`cover-url-area-${id}`);
+  const item = document.getElementById(`tei-${id}`);
+  if (!uploadArea || !urlArea) return;
+
+  // Toggle tab styles
+  const tabs = item.querySelectorAll('.cover-mode-tab');
+  tabs[0].classList.toggle('active', mode === 'upload');
+  tabs[1].classList.toggle('active', mode === 'url');
+
+  uploadArea.style.display = mode === 'upload' ? 'block' : 'none';
+  urlArea.style.display = mode === 'url' ? 'block' : 'none';
+}
+
+let coverUrlTimers = {};
+function handleCoverUrlInput(id, value) {
+  clearTimeout(coverUrlTimers[id]);
+  const statusEl = document.getElementById(`cover-url-status-${id}`);
+  const previewEl = document.getElementById(`cover-url-preview-${id}`);
+  if (statusEl) statusEl.textContent = '';
+
+  if (!value.trim()) {
+    updateTrack(id, 'coverImageUrl', '');
+    if (previewEl) { previewEl.classList.remove('show'); previewEl.innerHTML = ''; }
+    renderPlayerPage();
+    return;
+  }
+
+  // Debounce 600ms then test image load
+  coverUrlTimers[id] = setTimeout(() => {
+    const img = new Image();
+    img.onload = () => {
+      updateTrack(id, 'coverImageUrl', value.trim());
+      if (statusEl) { statusEl.textContent = '✓'; statusEl.className = 'url-status ok'; }
+      if (previewEl) {
+        previewEl.classList.add('show');
+        previewEl.innerHTML = `<img src="${escAttr(value.trim())}" alt="preview">`;
+      }
+      renderPlayerPage();
+    };
+    img.onerror = () => {
+      if (statusEl) { statusEl.textContent = '✗'; statusEl.className = 'url-status err'; }
+      if (previewEl) { previewEl.classList.remove('show'); previewEl.innerHTML = ''; }
+    };
+    img.src = value.trim();
+  }, 600);
+}
+
+// ========== SHARE ==========
+function openShareSheet() {
+  document.getElementById('share-backdrop').classList.add('open');
+  document.getElementById('share-sheet').classList.add('open');
+  document.getElementById('share-link-box').style.display = 'none';
+  shareGenerated = false;
+}
+function closeShareSheet() {
+  document.getElementById('share-backdrop').classList.remove('open');
+  document.getElementById('share-sheet').classList.remove('open');
+}
+
+function shareLink() {
+  // Build share-safe copy: strip base64 coverImage (too large), keep coverImageUrl
+  const shareData = {
+    ...playlist,
+    tracks: playlist.tracks.map(t => {
+      const { coverImage, ...rest } = t;
+      // If URL mode is active, coverImageUrl carries the image; base64 is local-only
+      return rest;
+    })
+  };
+  const json = JSON.stringify(shareData);
+  const encoded = encodeURIComponent(json);
+  const baseUrl = window.location.href.replace('index.html','').replace(/\/$/, '');
+  generatedShareLink = `${baseUrl}/playlist.html?data=${encoded}`;
+
+  // Warn if still too long (>8000 chars)
+  const tooLong = generatedShareLink.length > 8000;
+  document.getElementById('share-link-url').textContent = tooLong
+    ? '⚠️ URL이 너무 깁니다. 앨범 커버를 URL 방식으로 변경해 주세요.'
+    : generatedShareLink;
+  document.getElementById('share-link-box').style.display = 'block';
+  shareGenerated = !tooLong;
+  if (tooLong) showToast('커버 이미지를 URL로 변경하면 링크가 짧아집니다');
+}
+
+function copyShareLink() {
+  if (!generatedShareLink) return;
+  navigator.clipboard.writeText(generatedShareLink).then(() => {
+    showToast('링크가 복사되었습니다!');
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = generatedShareLink;
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('링크가 복사되었습니다!');
+  });
+}
+
+function saveAsImage() {
+  closeShareSheet();
+  switchPage('player');
+  showLoading('이미지 저장 중...');
+
+  setTimeout(() => {
+    const captureEl = document.getElementById('capture-area');
+    const rect = captureEl.getBoundingClientRect();
+    const scrollY = window.scrollY;
+
+    html2canvas(captureEl, {
+      backgroundColor: '#0A0A0F',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: -scrollY,
+      windowWidth: window.innerWidth,
+      windowHeight: document.body.scrollHeight,
+      onclone: (doc) => {
+        // 모든 img 태그에 object-fit 스타일을 인라인으로 강제 적용
+        doc.querySelectorAll('img').forEach(img => {
+          img.style.objectFit = 'cover';
+          img.style.width = '100%';
+          img.style.height = '100%';
+        });
+        // hero cover 강제 고정
+        const heroWrap = doc.getElementById('hero-cover-wrap');
+        if (heroWrap) {
+          heroWrap.style.overflow = 'hidden';
+          heroWrap.style.position = 'relative';
+        }
+      }
+    }).then(canvas => {
+      hideLoading();
+      const link = document.createElement('a');
+      link.download = `${playlist.name || 'playlist'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('이미지가 저장되었습니다!');
+    }).catch(() => {
+      hideLoading();
+      showToast('이미지 저장 중 오류가 발생했습니다');
+    });
+  }, 400);
+}
+
+function exportData() {
+  closeShareSheet();
+  const blob = new Blob([JSON.stringify(playlist, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${playlist.name||'playlist'}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('데이터가 다운로드됩니다!');
+}
+
+// ========== UTILS ==========
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+function showLoading(msg) {
+  document.getElementById('loading-text').textContent = msg || '처리 중...';
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('show');
+}
+function escHtml(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return (str||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init
+init();
+</script>
+</body>
+</html>
