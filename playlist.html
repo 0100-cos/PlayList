@@ -11,7 +11,7 @@
 <meta property="og:image" id="og-image" content="">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" id="tw-title" content="플레이리스트">
-<meta name="twitter:description" content="나만의 플레이리스트를 감상하세요">
+<meta name="twitter:description" content="플레이리스트를 감상하세요">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -67,7 +67,7 @@
   /* HERO */
   .player-hero {
     position: relative; overflow: hidden;
-    height: 400px;
+    height: 460px;
     background: var(--bg2);
   }
   .hero-bg {
@@ -80,9 +80,9 @@
   .hero-cover-frame {
     position: absolute;
     top: 50%; left: 50%;
-    transform: translate(-50%, -65%);
-    width: 160px; height: 160px;
-    border-radius: 16px;
+    transform: translate(-50%, -60%);
+    width: 220px; height: 220px;
+    border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     background: var(--bg3);
@@ -386,7 +386,7 @@ function renderPage() {
                 </button>`
             }
             <button class="ctrl-btn" onclick="nextTrack()">
-              <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14 5.5 3.89L8 13.86V9.86zM16 6h2v12h-2z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
             </button>
           </div>
           ${ytUrl ? `<a class="yt-badge" href="${ytUrl}" target="_blank" rel="noopener">
@@ -412,9 +412,9 @@ function renderPage() {
       <p>${esc(t.lyrics)}</p>
     </div>` : ''}
 
-    <!--<div class="footer">
+    <div class="footer">
       <a href="index.html">PLEditor로 나만의 플레이리스트 만들기 →</a>
-    </div>-->
+    </div>
   `;
 }
 

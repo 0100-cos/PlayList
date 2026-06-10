@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>0100 플레이리스트 에디터</title>
-<!--head 태그 내 추가-->
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<title>0100플레이리스트 에디터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -319,30 +317,32 @@
   .cover-upload-overlay span { font-size: 12px; color: #fff; font-weight: 600; }
   .cover-upload-overlay svg { fill: #fff; width: 22px; height: 22px; }
   .cover-row { display: flex; gap: 12px; align-items: flex-start; }
-  .cover-row .cover-upload { flex: 0 0 110px; max-height: 110px; width: 110px; }
-  .cover-row .cover-url-area { flex: 1; }
+  .cover-row > div:first-child { flex: 0 0 110px; width: 110px; min-width: 0; }
+  .cover-row > div:last-child { flex: 1; min-width: 0; overflow: hidden; }
+  .cover-row .cover-upload { flex: none; width: 110px; max-height: 110px; }
 
   /* Cover mode tabs */
   .cover-mode-tabs {
     display: flex; gap: 3px; background: var(--bg4);
     border-radius: 8px; padding: 3px; margin-bottom: 8px;
+    width: 110px;
   }
   .cover-mode-tab {
-    flex: 1; padding: 5px 8px; font-size: 11px; font-weight: 700;
+    flex: 1; padding: 5px 4px; font-size: 11px; font-weight: 700;
     border-radius: 6px; border: none; cursor: pointer;
     color: var(--text3); background: transparent; transition: all 0.2s;
     font-family: 'Pretendard', sans-serif; text-align: center;
   }
   .cover-mode-tab.active { background: var(--surface2); color: var(--text); }
-  .cover-url-input-wrap { position: relative; }
+  .cover-url-input-wrap { position: relative; width: 110px; }
   .cover-url-input-wrap .url-status {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
     font-size: 11px; font-weight: 700; pointer-events: none;
   }
   .url-status.ok { color: #10B981; }
   .url-status.err { color: #EF4444; }
   .cover-url-preview {
-    width: 100%; aspect-ratio: 16/9; border-radius: 8px;
+    width: 110px; aspect-ratio: 1; border-radius: 8px;
     background: var(--bg4); margin-top: 6px; overflow: hidden;
     display: none; border: 1px solid var(--border);
   }
@@ -477,59 +477,13 @@
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
-/* CROP EDITOR */
-.crop-modal {
-  position: fixed; inset: 0; z-index: 400;
-  background: rgba(0,0,0,0.92);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 20px;
-  opacity: 0; pointer-events: none; transition: opacity 0.3s;
-}
-.crop-modal.open { opacity: 1; pointer-events: all; }
-.crop-modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
-.crop-container {
-  position: relative;
-  width: 100%; max-width: 360px;
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: 12px;
-  border: 2px solid var(--accent);
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-.crop-container:active { cursor: grabbing; }
-.crop-img {
-  position: absolute;
-  transform-origin: 0 0;
-}
-.crop-overlay {
-  position: absolute; inset: 0;
-  border: 3px solid var(--accent);
-  border-radius: 10px;
-  pointer-events: none;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
-}
-.crop-hint { font-size: 12px; color: var(--text3); margin-top: 10px; text-align: center; }
-.crop-zoom-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; width: 100%; max-width: 360px; }
-.crop-zoom-label { font-size: 12px; color: var(--text2); font-weight: 600; white-space: nowrap; }
-.crop-buttons { display: flex; gap: 10px; margin-top: 16px; width: 100%; max-width: 360px; }
-.crop-btn {
-  flex: 1; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700;
-  border: none; cursor: pointer; font-family: 'Pretendard', sans-serif; transition: all 0.2s;
-}
-.crop-btn-cancel { background: var(--bg3); color: var(--text2); }
-.crop-btn-apply { background: var(--accent); color: #fff; }
-.crop-btn-apply:active { background: var(--accent-dark); }
-
 </style>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
-  <div class="logo">🎵 0100PLEditor</div>
+  <div class="logo">🎵 0100 PLEditor</div>
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-player" onclick="switchPage('player')">플레이어</button>
     <button class="nav-tab" id="tab-editor" onclick="switchPage('editor')">에디터</button>
@@ -564,7 +518,7 @@
                 <svg viewBox="0 0 24 24" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
               </button>
               <button class="ctrl-btn" onclick="nextTrack()">
-                <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14 5.5 3.89L8 13.86V9.86zM16 6h2v12h-2z"/></svg>
+               <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
               </button>
             </div>
             <a class="yt-link-badge" id="yt-badge" href="#" target="_blank" style="display:none;">
@@ -587,7 +541,7 @@
               <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
             </div>
             <div class="empty-title">아직 곡이 없어요</div>
-            <div class="empty-desc">에디터에서 음악을 추가하고<br> 플레이리스트를 만들어보세요</div>
+            <div class="empty-desc">에디터에서 음악을 추가하고<br>플레이리스트를 만들어보세요</div>
             <button class="btn-add-first" onclick="switchPage('editor')">에디터로 이동</button>
           </div>
         </div>
@@ -697,25 +651,6 @@
   <button class="sheet-cancel" onclick="closeShareSheet()">취소</button>
 </div>
 
-
-<!-- CROP MODAL -->
-<div class="crop-modal" id="crop-modal">
-  <div class="crop-modal-title">커버 위치 조정</div>
-  <div class="crop-container" id="crop-container">
-    <img class="crop-img" id="crop-img" src="" alt="">
-    <div class="crop-overlay"></div>
-  </div>
-  <div class="crop-hint">드래그로 위치 · 핀치 또는 슬라이더로 크기 조절</div>
-  <div class="crop-zoom-row">
-    <span class="crop-zoom-label">확대</span>
-    <input type="range" id="crop-zoom-slider" min="100" max="300" value="100" oninput="cropSetZoom(this.value)">
-  </div>
-  <div class="crop-buttons">
-    <button class="crop-btn crop-btn-cancel" onclick="closeCropModal()">취소</button>
-    <button class="crop-btn crop-btn-apply" onclick="applyCrop()">적용</button>
-  </div>
-</div>
-
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -740,179 +675,6 @@ let isPlaying = false;
 let dragSrc = null;
 let shareGenerated = false;
 let generatedShareLink = '';
-
-// ========== CROP EDITOR ==========
-let cropState = { id: null, imgSrc: '', x: 0, y: 0, zoom: 1, isDragging: false, lastX: 0, lastY: 0, lastDist: 0 };
-
-function openCropModal(id, src) {
-  cropState.id = id;
-  cropState.imgSrc = src;
-  cropState.zoom = 1;
-  cropState.x = 0;
-  cropState.y = 0;
-
-  const modal = document.getElementById('crop-modal');
-  const img = document.getElementById('crop-img');
-  const slider = document.getElementById('crop-zoom-slider');
-  slider.value = 100;
-  img.src = src;
-
-  img.onload = () => {
-    cropFitImage();
-    applyCropTransform();
-  };
-
-  modal.classList.add('open');
-
-  // Touch events
-  const container = document.getElementById('crop-container');
-  container.addEventListener('mousedown', cropMouseDown);
-  container.addEventListener('mousemove', cropMouseMove);
-  container.addEventListener('mouseup', cropMouseUp);
-  container.addEventListener('mouseleave', cropMouseUp);
-  container.addEventListener('touchstart', cropTouchStart, { passive: false });
-  container.addEventListener('touchmove', cropTouchMove, { passive: false });
-  container.addEventListener('touchend', cropTouchEnd);
-}
-
-function closeCropModal() {
-  document.getElementById('crop-modal').classList.remove('open');
-  const container = document.getElementById('crop-container');
-  container.removeEventListener('mousedown', cropMouseDown);
-  container.removeEventListener('mousemove', cropMouseMove);
-  container.removeEventListener('mouseup', cropMouseUp);
-  container.removeEventListener('mouseleave', cropMouseUp);
-  container.removeEventListener('touchstart', cropTouchStart);
-  container.removeEventListener('touchmove', cropTouchMove);
-  container.removeEventListener('touchend', cropTouchEnd);
-}
-
-function cropFitImage() {
-  const img = document.getElementById('crop-img');
-  const container = document.getElementById('crop-container');
-  const cw = container.offsetWidth, ch = container.offsetHeight;
-  const iw = img.naturalWidth, ih = img.naturalHeight;
-  // fit: shorter side fills container
-  const scale = Math.max(cw / iw, ch / ih);
-  cropState.baseScale = scale;
-  cropState.zoom = 1;
-  // center
-  cropState.x = (cw - iw * scale) / 2;
-  cropState.y = (ch - ih * scale) / 2;
-}
-
-function applyCropTransform() {
-  const img = document.getElementById('crop-img');
-  const s = cropState.baseScale * cropState.zoom;
-  img.style.transform = `translate(${cropState.x}px, ${cropState.y}px) scale(${s})`;
-  img.style.transformOrigin = '0 0';
-  img.style.width = document.getElementById('crop-img').naturalWidth + 'px';
-  img.style.height = document.getElementById('crop-img').naturalHeight + 'px';
-}
-
-function cropSetZoom(val) {
-  const container = document.getElementById('crop-container');
-  const img = document.getElementById('crop-img');
-  const newZoom = val / 100;
-  const cw = container.offsetWidth, ch = container.offsetHeight;
-  const iw = img.naturalWidth, ih = img.naturalHeight;
-  // Zoom toward center
-  const oldS = cropState.baseScale * cropState.zoom;
-  const newS = cropState.baseScale * newZoom;
-  const cx = cw / 2, cy = ch / 2;
-  cropState.x = cx - (cx - cropState.x) * (newS / oldS);
-  cropState.y = cy - (cy - cropState.y) * (newS / oldS);
-  cropState.zoom = newZoom;
-  clampCrop();
-  applyCropTransform();
-}
-
-function clampCrop() {
-  const container = document.getElementById('crop-container');
-  const img = document.getElementById('crop-img');
-  const cw = container.offsetWidth, ch = container.offsetHeight;
-  const s = cropState.baseScale * cropState.zoom;
-  const iw = img.naturalWidth * s, ih = img.naturalHeight * s;
-  // Don't let image leave container edges
-  if (cropState.x > 0) cropState.x = 0;
-  if (cropState.y > 0) cropState.y = 0;
-  if (cropState.x < cw - iw) cropState.x = cw - iw;
-  if (cropState.y < ch - ih) cropState.y = ch - ih;
-}
-
-// Mouse drag
-function cropMouseDown(e) { cropState.isDragging = true; cropState.lastX = e.clientX; cropState.lastY = e.clientY; }
-function cropMouseMove(e) {
-  if (!cropState.isDragging) return;
-  cropState.x += e.clientX - cropState.lastX;
-  cropState.y += e.clientY - cropState.lastY;
-  cropState.lastX = e.clientX; cropState.lastY = e.clientY;
-  clampCrop(); applyCropTransform();
-}
-function cropMouseUp() { cropState.isDragging = false; }
-
-// Touch drag + pinch
-function cropTouchStart(e) {
-  e.preventDefault();
-  if (e.touches.length === 1) {
-    cropState.isDragging = true;
-    cropState.lastX = e.touches[0].clientX;
-    cropState.lastY = e.touches[0].clientY;
-  } else if (e.touches.length === 2) {
-    cropState.isDragging = false;
-    cropState.lastDist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-  }
-}
-function cropTouchMove(e) {
-  e.preventDefault();
-  if (e.touches.length === 1 && cropState.isDragging) {
-    cropState.x += e.touches[0].clientX - cropState.lastX;
-    cropState.y += e.touches[0].clientY - cropState.lastY;
-    cropState.lastX = e.touches[0].clientX;
-    cropState.lastY = e.touches[0].clientY;
-    clampCrop(); applyCropTransform();
-  } else if (e.touches.length === 2) {
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    const delta = dist / cropState.lastDist;
-    const newZoom = Math.min(3, Math.max(1, cropState.zoom * delta));
-    const slider = document.getElementById('crop-zoom-slider');
-    slider.value = newZoom * 100;
-    cropSetZoom(newZoom * 100);
-    cropState.lastDist = dist;
-  }
-}
-function cropTouchEnd() { cropState.isDragging = false; }
-
-function applyCrop() {
-  const container = document.getElementById('crop-container');
-  const img = document.getElementById('crop-img');
-  const cw = container.offsetWidth, ch = container.offsetHeight;
-  const s = cropState.baseScale * cropState.zoom;
-
-  // Render to canvas at 2x resolution
-  const canvas = document.createElement('canvas');
-  canvas.width = cw * 2; canvas.height = ch * 2;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img,
-    -cropState.x / s, -cropState.y / s,
-    cw / s, ch / s,
-    0, 0, canvas.width, canvas.height
-  );
-
-  const base64 = canvas.toDataURL('image/jpeg', 0.9);
-  updateTrack(cropState.id, 'coverImage', base64);
-  updateTrack(cropState.id, 'coverImageUrl', ''); // URL 모드 초기화
-  closeCropModal();
-  renderEditorPage();
-  renderPlayerPage();
-  showToast('커버 이미지가 적용됐습니다');
-}
 
 // ========== INIT ==========
 function init() {
@@ -1091,8 +853,9 @@ function handleCoverUpload(id, input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    // 업로드 즉시 크롭 모달 열기
-    openCropModal(id, e.target.result);
+    updateTrack(id, 'coverImage', e.target.result);
+    renderEditorPage();
+    renderPlayerPage();
   };
   reader.readAsDataURL(file);
 }
@@ -1225,6 +988,12 @@ function updatePlayIcon(playing) {
 
 // ========== RENDER EDITOR PAGE ==========
 function renderEditorPage() {
+  // 열려있는 트랙 id 저장
+  const openIds = new Set(
+    [...document.querySelectorAll('.track-editor-fields.open')]
+      .map(el => el.id.replace('fields-', ''))
+  );
+
   document.getElementById('edit-playlist-name').value = playlist.name;
   document.getElementById('editor-track-count').textContent = `${playlist.tracks.length}곡`;
 
@@ -1255,7 +1024,7 @@ function renderEditorPage() {
       </div>
       <div class="track-editor-fields" id="fields-${t.id}">
         <div class="cover-row">
-          <div>
+          <div style="flex:0 0 110px;width:110px;min-width:0;">
             <label class="form-label" style="font-size:12px;">앨범 커버</label>
             <div class="cover-mode-tabs">
               <button class="cover-mode-tab ${!t.coverImageUrl ? 'active' : ''}" onclick="setCoverMode(${t.id},'upload')">파일</button>
@@ -1281,7 +1050,7 @@ function renderEditorPage() {
               </div>
             </div>
           </div>
-          <div style="flex:1;">
+          <div style="flex:1;min-width:0;overflow:hidden;">
             <div class="form-group">
               <label class="form-label">곡 이름</label>
               <input type="text" class="form-input" value="${escAttr(t.title)}" placeholder="곡 이름" oninput="updateTrack(${t.id},'title',this.value);document.getElementById('tei-${t.id}').querySelector('.track-editor-name').textContent=this.value||'새 곡'">
@@ -1303,6 +1072,14 @@ function renderEditorPage() {
       </div>
     </div>
   `).join('');
+
+  // 렌더 후 원래 열려있던 항목 복원
+  openIds.forEach(id => {
+    const fields = document.getElementById(`fields-${id}`);
+    const toggle = document.getElementById(`toggle-${id}`);
+    if (fields) fields.classList.add('open');
+    if (toggle) toggle.classList.add('open');
+  });
 }
 
 function toggleTrackEditor(id) {
@@ -1416,38 +1193,17 @@ function copyShareLink() {
 
 function saveAsImage() {
   closeShareSheet();
-  switchPage('player');
   showLoading('이미지 저장 중...');
-
+  const captureEl = document.getElementById('capture-area');
+  // Switch to player page first
+  switchPage('player');
   setTimeout(() => {
-    const captureEl = document.getElementById('capture-area');
-    const rect = captureEl.getBoundingClientRect();
-    const scrollY = window.scrollY;
-
     html2canvas(captureEl, {
       backgroundColor: '#0A0A0F',
       scale: 2,
       useCORS: true,
       allowTaint: true,
-      logging: false,
-      scrollX: 0,
-      scrollY: -scrollY,
-      windowWidth: window.innerWidth,
-      windowHeight: document.body.scrollHeight,
-      onclone: (doc) => {
-        // 모든 img 태그에 object-fit 스타일을 인라인으로 강제 적용
-        doc.querySelectorAll('img').forEach(img => {
-          img.style.objectFit = 'cover';
-          img.style.width = '100%';
-          img.style.height = '100%';
-        });
-        // hero cover 강제 고정
-        const heroWrap = doc.getElementById('hero-cover-wrap');
-        if (heroWrap) {
-          heroWrap.style.overflow = 'hidden';
-          heroWrap.style.position = 'relative';
-        }
-      }
+      logging: false
     }).then(canvas => {
       hideLoading();
       const link = document.createElement('a');
@@ -1455,11 +1211,11 @@ function saveAsImage() {
       link.href = canvas.toDataURL('image/png');
       link.click();
       showToast('이미지가 저장되었습니다!');
-    }).catch(() => {
+    }).catch(err => {
       hideLoading();
       showToast('이미지 저장 중 오류가 발생했습니다');
     });
-  }, 400);
+  }, 300);
 }
 
 function exportData() {
